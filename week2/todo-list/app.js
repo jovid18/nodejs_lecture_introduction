@@ -1,7 +1,7 @@
 import express from 'express';
 import connect from './schemas/index.js';
 import todoRouter from './routes/todos.router.js';
-
+import errorHanderMiddleware from './middlewares/error-hander.middleware.js';
 const app = express();
 const PORT = 3000;
 
@@ -19,6 +19,9 @@ router.get('/', (req, res) => {
 });
 
 app.use('/api', [router, todoRouter]);
+
+//에러 처리 미들웨어를 등록한다.
+app.use(errorHanderMiddleware);
 
 app.listen(PORT, () => {
   console.log(PORT, '포트로 서버가 열렸어요!');
