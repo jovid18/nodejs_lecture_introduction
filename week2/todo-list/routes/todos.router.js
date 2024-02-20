@@ -1,23 +1,42 @@
 import express from 'express';
+import joi from 'joi';
 import Todo from '../schemas/todo.schemas.js';
 const router = express.Router();
+// 1. `value` 데이터는 **필수적으로 존재**해야한다.
+// 2. `value` 데이터는 **문자열 타입**이어야한다.
+// 3. `value` 데이터는 **최소 1글자 이상**이어야한다.
+// 4. `value` 데이터는 **최대 50글자 이하**여야한다.
+// 5. 유효성 검사에 실패했을 때, 에러가 발생해야한다.
 
 // 할일 등록 API
+const createTodoSchema = joi.object({
+  value: joi.string().min(1).max(50).required(),
+});
 
 router.post('/todos', async (req, res, next) => {
-  const { value } = req.body;
+  try {
+    const validiation = await createTodoSchema.validateAsync(req.body);
+    const { value } = validiation;
+    if (!value) {
+      return res
+        .status(400)
+        .json({ errorMessage: '해야할 일(value) 데이터가 존재하지 않습니다.' });
+    }
+    const todoMaxOrder = await Todo.findOne().sort('-order').exec();
+    const order = todoMaxOrder ? todoMaxOrder.order + 1 : 1;
+    const todo = new Todo({ value, order });
+    await todo.save();
 
-  if (!value) {
+    return res.status(201).json({ todo: todo });
+  } catch (error) {
+    console.error(error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ errorMessage: error.message });
+    }
     return res
-      .status(400)
-      .json({ errorMessage: '해야할 일(value) 데이터가 존재하지 않습니다.' });
+      .status(500)
+      .json({ errorMessage: '서버에서 에러가 발생했습니다.' });
   }
-  const todoMaxOrder = await Todo.findOne().sort('-order').exec();
-  const order = todoMaxOrder ? todoMaxOrder.order + 1 : 1;
-  const todo = new Todo({ value, order });
-  await todo.save();
-
-  return res.status(201).json({ todo: todo });
 });
 
 //해야할 일 목록 조회 API
