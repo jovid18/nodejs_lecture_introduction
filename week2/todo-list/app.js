@@ -1,5 +1,6 @@
 import express from 'express';
 import connect from './schemas/index.js';
+import todoRouter from './routes/todos.router.js';
 
 const app = express();
 const PORT = 3000;
@@ -17,7 +18,7 @@ router.get('/', (req, res) => {
   return res.json({ message: 'Hi!' });
 });
 
-app.use('/api', router);
+app.use('/api', [router, todoRouter]);
 
 app.listen(PORT, () => {
   console.log(PORT, '포트로 서버가 열렸어요!');
